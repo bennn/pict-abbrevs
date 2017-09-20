@@ -1,5 +1,9 @@
 #lang racket/base
 
+;; TODO
+;; - use namespace-attach, remove the `(case (string->symbol ....) ....)`
+;; - need to namespace-require after doing the attach
+
 (require
   pict
   racket/path
@@ -8,6 +12,16 @@
     save-pict))
 
 ;; =============================================================================
+
+(define-namespace-anchor nsa)
+
+(define pict-namespace
+  (parameterize ([current-namespace (make-empty-namespace)])
+    (namespace-attach-module (namespace-anchor->namespace nsa) 'pict)
+    (namespace-require 'pict)
+    (current-namespace)))
+
+;; -----------------------------------------------------------------------------
 
 (define (infer-format ps*)
   (define ext* (for/set ([ps (in-list ps*)]) (path-get-extension ps)))
@@ -23,10 +37,7 @@
   (apply f pict*))
 
 (define (string->pict-function str)
-  (case (string->symbol str)
-   [(vl-append) vl-append]
-   [(vc-append) vc-append]
-   [else (raise-user-error 'string->pict-function str)]))
+  (eval (string->symbol str) pict-namespace))
 
 ;; =============================================================================
 
@@ -41,4 +52,5 @@
    (define file-format ".png")
    (define out-file (path-add-extension (*output*) file-format))
    (define new-pict (pict-eval cmd (map path-string->pict FILE*)))
-   (save-pict out-file new-pict)))
+   (and (save-pict out-file new-pict)
+        (printf "Saved result to '~a'~n" out-file))))
