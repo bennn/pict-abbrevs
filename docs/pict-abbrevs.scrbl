@@ -1,4 +1,12 @@
 #lang scribble/manual
 
 @title{Pict Abbrevs}
-TBA
+
+@defmodule[pict-abbrevs]
+
+
+@section{raco pict}
+
+To vertically append image files:
+
+@exec{raco pict vl-append FILE ...}
