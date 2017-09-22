@@ -43,14 +43,13 @@
 
 (module+ main
   (require racket/cmdline)
-  (define *output* (make-parameter "raco-pict"))
+  (define *output* (make-parameter "raco-pict.png"))
   (command-line
    #:program "pict"
    #:once-any
    [("-o" "--output") of "Output filename" (*output* of)]
    #:args (cmd . FILE*)
-   (define file-format ".png")
-   (define out-file (path-add-extension (*output*) file-format))
+   (define out-file (*output*))
    (define new-pict (pict-eval cmd (map path-string->pict FILE*)))
    (and (save-pict out-file new-pict)
         (printf "Saved result to '~a'~n" out-file))))
