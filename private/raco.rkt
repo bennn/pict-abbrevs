@@ -8,7 +8,9 @@
   pict
   racket/path
   racket/set
-  (only-in gtp-plot/util
+  (only-in lang-file/read-lang-file
+    lang-file?)
+  (only-in pict-abbrevs/private/pict-abbrevs
     save-pict))
 
 ;; =============================================================================
@@ -29,8 +31,18 @@
     (car (set->list ext*))
     (raise-argument-error 'pict "files with same extension" ps*)))
 
-(define path-string->pict
-  bitmap)
+(define (path-string->pict ps)
+  (if (lang-file? ps)
+    (lang-file->pict ps)
+    (bitmap ps)))
+
+(define RACO-PICT-KEY 'raco-pict)
+
+(define (lang-file->pict ps)
+  (define require-spec `(submod ,ps ,RACO-PICT-KEY))
+  (define (fail)
+    (raise-argument-error 'lang-file->pict (format "(and/c path-string? (has-submod ~a))" RACO-PICT-KEY) ps))
+  (dynamic-require require-spec RACO-PICT-KEY fail))
 
 (define (pict-eval cmd pict*)
   (define f (string->pict-function cmd))
@@ -50,6 +62,9 @@
    [("-o" "--output") of "Output filename" (*output* of)]
    #:args (cmd . FILE*)
    (define out-file (*output*))
-   (define new-pict (pict-eval cmd (map path-string->pict FILE*)))
+   (define new-pict
+     (if (null? FILE*)
+       (path-string->pict cmd)
+       (pict-eval cmd (map path-string->pict FILE*))))
    (and (save-pict out-file new-pict)
         (printf "Saved result to '~a'~n" out-file))))
