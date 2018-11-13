@@ -10,7 +10,8 @@
     racket/class
     racket/contract
     racket/draw
-    racket/math)]
+    racket/math
+    #;(only-in slideshow current-slide-assembler margin client-w client-h))]
 
 @(define (make-eval) (make-base-eval '(require pict pict-abbrevs)))
 
@@ -98,6 +99,75 @@
 @defproc[(save-pict [p pict?] [ps path-string?] [kind (or/c 'png 'jpeg 'xbm 'xpm 'bmp) 'png]) boolean?]{
   Exports the given pict to the file @racket[ps], using @racket[kind] to determine the output format.
 }
+
+@defthing[#:kind "contract" slide-assembler/c chaperone-contract?]{
+  Contract for a function that can be used to build @racketmodname[slideshow] slides.
+  See also @racket[current-slide-assembler].
+}
+
+@defproc[(slide-assembler/background [base-assembler slide-assembler/c]
+                                     [#:color background-color pict-color/c]
+                                     [#:draw-border? draw-border? boolean? #false]
+                                     [#:border-color border-color pict-color/c #false]
+                                     [#:border-width border-width (or/c #f real?) #false]) slide-assembler/c]{
+  Returns a slide assembler that: (1) uses the given @racket[base-assembler] to
+  create a pict, and (2) superimposes the pict onto a @racket[filled-rectangle]
+  that covers the screen.
+  The optional arguments set the style of the background rectangle.
+
+  @;@codeblock|{
+  @;  #lang racket/base
+  @;  (require pict-abbrevs slideshow)
+
+  @;  (parameterize ((current-slide-assembler (slide-assembler/background (current-slide-assembler) #:color "red"))
+  @;                 (current-font-size 60))
+  @;    (slide (t "HOLA")))
+  @;}|
+}
+
+@defthing[#:kind "contract" real% flat-contract?]{
+  Same as @racket[(between/c 0 1)].
+}
+
+@;@defthing[#:kind "contract" nonnegative-real? flat-contract?]{
+@;  Same as @racket[(>=/c 0)].
+@;
+@;  @examples[#:eval (make-eval)
+@;    (nonnegative-real? 0)
+@;    (nonnegative-real? 2.77)
+@;    (nonnegative-real? 9001)
+@;    (nonnegative-real? -1)
+@;    (nonnegative-real? 'X)]
+@;}
+@;
+@;@;@defproc[(pixels->w% [x nonnegative-real?]) real%]{
+@;@;}
+@;@;
+@;@;@defproc[(pixels->h% [x nonnegative-real?]) real%]{
+@;@;}
+@;
+@;@defproc[(w%->pixels [w real%]) nonnegative-real?]{
+@;  Converts a percent to the number of pixels required to cover that percent
+@;   of @racket[client-w].
+@;
+@;  @examples[#:eval (make-eval)
+@;    (w%->pixels 1/10)
+@;    (w%->pixels 5/10)
+@;    (= client-w (w%->pixels 1))]
+@;}
+@;
+@;@defproc[(h%->pixels [w real%]) nonnegative-real?]{
+@;  Converts a percent to the number of pixels required to cover that percent
+@;   of @racket[client-h].
+@;}
+@;
+@;@defproc[(text/color [str string?] [c pict-color/c]) pict?]{
+@;  @examples[#:eval (make-eval)
+@;    (text/color "black" "black")
+@;    (text/color "red" "red")
+@;    (parameterize ((current-font-size 20))
+@;      (text/color "orchid" "orchid"))]
+@;}
 
 
 @section{raco pict}
