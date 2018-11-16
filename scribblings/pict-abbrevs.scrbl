@@ -4,6 +4,7 @@
   scribble/example
   (for-label
     pict
+    ppict/2
     pict-abbrevs
     plot/no-gui
     racket/base
@@ -11,17 +12,22 @@
     racket/contract
     racket/draw
     racket/math
-    #;(only-in slideshow current-slide-assembler margin client-w client-h))]
+    (only-in slideshow/base current-slide-assembler margin client-w client-h))]
 
-@(define (make-eval) (make-base-eval '(require pict pict-abbrevs)))
+@(define x-eval (make-base-eval '(require pict ppict/2 pict-abbrevs (only-in slideshow/base margin client-w client-h current-font-size))))
+@(define (make-eval) x-eval)
 
 @title{Pict Abbrevs}
 
-@defmodule[pict-abbrevs]
+@defmodule[pict-abbrevs]{
+  The @racketmodname[pict-abbrevs] module exports the following bindings and
+  re-exports the contents of @racketmodname[pict-abbrevs/slideshow].
+}
 
 @defthing[#:kind "value" revolution real?]{
   Equal to @racket[(* 2 pi)], or @hyperlink["https://tauday.com/tau-manifesto"]{the tau constant}.
   Useful for rotating picts.
+  @margin-note{If @litchar{revolution} is too many characters, then @racket[(require (rename-in pict-abbrevs [revolution turn]))].}
 
   @examples[#:eval (make-eval)
     (arrowhead 30 (*   0 revolution))
@@ -33,6 +39,15 @@
 @defthing[#:kind "contract" pict-color/c (-> any/c boolean?)]{
   Flat contract for the kinds of values that @racketmodname[pict] functions
    can usually interpret as colors.
+}
+
+@defproc[(pict-color->color% [pc pict-color/c] [#:default default pict-color/c]) (is-a?/c color%)]{
+  Creates a @racket[color%] object.
+  If @racket[pc] and @racket[default] are @racket[#false], returns @racket[(string->color% "white")].
+
+  @examples[#:eval (make-eval)
+    (pict-color->color% "blue")
+    (pict-color->color% #f)]
 }
 
 @defthing[#:kind "contract" rgb-triplet/c (-> any/c boolean?)]{
@@ -100,6 +115,27 @@
   Exports the given pict to the file @racket[ps], using @racket[kind] to determine the output format.
 }
 
+@defthing[#:kind "contract" real% flat-contract?]{
+  Same as @racket[(between/c 0 1)].
+}
+
+@defthing[#:kind "contract" nonnegative-real? flat-contract?]{
+  Same as @racket[(>=/c 0)].
+
+  @examples[#:eval (make-eval)
+    (nonnegative-real? 0)
+    (nonnegative-real? 2.77)
+    (nonnegative-real? 9001)
+    (nonnegative-real? -1)
+    (nonnegative-real? 'X)]
+}
+
+@section{Slideshow Abbrevs}
+
+@defmodule[pict-abbrevs/slideshow]{
+  Helpers for working with @racketmodname[slideshow] or @racketmodname[ppict/2].
+}
+
 @defthing[#:kind "contract" slide-assembler/c chaperone-contract?]{
   Contract for a function that can be used to build @racketmodname[slideshow] slides.
   See also @racket[current-slide-assembler].
@@ -115,60 +151,113 @@
   that covers the screen.
   The optional arguments set the style of the background rectangle.
 
-  @;@codeblock|{
-  @;  #lang racket/base
-  @;  (require pict-abbrevs slideshow)
+  @codeblock|{
+    #lang racket/base
+    (require pict-abbrevs slideshow)
 
-  @;  (parameterize ((current-slide-assembler (slide-assembler/background (current-slide-assembler) #:color "red"))
-  @;                 (current-font-size 60))
-  @;    (slide (t "HOLA")))
-  @;}|
+    (parameterize ((current-slide-assembler (slide-assembler/background (current-slide-assembler) #:color "red"))
+                   (current-font-size 60))
+      (slide (t "HOLA")))
+  }|
 }
 
-@defthing[#:kind "contract" real% flat-contract?]{
-  Same as @racket[(between/c 0 1)].
+@defproc[(pixels->w% [x nonnegative-real?]) real%]{
+  Converts a pixel distance to a percentage of the max screen width (i.e., @racket[(+ (* 2 margin) client-w)]).
+  Raise an @racket[exn:fail:contract?] exception if the given distance exceeds the max width.
 }
 
-@;@defthing[#:kind "contract" nonnegative-real? flat-contract?]{
-@;  Same as @racket[(>=/c 0)].
-@;
-@;  @examples[#:eval (make-eval)
-@;    (nonnegative-real? 0)
-@;    (nonnegative-real? 2.77)
-@;    (nonnegative-real? 9001)
-@;    (nonnegative-real? -1)
-@;    (nonnegative-real? 'X)]
-@;}
-@;
-@;@;@defproc[(pixels->w% [x nonnegative-real?]) real%]{
-@;@;}
-@;@;
-@;@;@defproc[(pixels->h% [x nonnegative-real?]) real%]{
-@;@;}
-@;
-@;@defproc[(w%->pixels [w real%]) nonnegative-real?]{
-@;  Converts a percent to the number of pixels required to cover that percent
-@;   of @racket[client-w].
-@;
-@;  @examples[#:eval (make-eval)
-@;    (w%->pixels 1/10)
-@;    (w%->pixels 5/10)
-@;    (= client-w (w%->pixels 1))]
-@;}
-@;
-@;@defproc[(h%->pixels [w real%]) nonnegative-real?]{
-@;  Converts a percent to the number of pixels required to cover that percent
-@;   of @racket[client-h].
-@;}
-@;
-@;@defproc[(text/color [str string?] [c pict-color/c]) pict?]{
-@;  @examples[#:eval (make-eval)
-@;    (text/color "black" "black")
-@;    (text/color "red" "red")
-@;    (parameterize ((current-font-size 20))
-@;      (text/color "orchid" "orchid"))]
-@;}
+@defproc[(pixels->h% [x nonnegative-real?]) real%]{
+  Converts a pixel distance to a percentage of the max screen height (i.e., @racket[(+ (* 2 margin) client-h)]).
+  Raise an @racket[exn:fail:contract?] exception if the given distance exceeds the max height.
+}
 
+@defproc[(w%->pixels [w real%]) nonnegative-real?]{
+  Converts a percent to the number of pixels required to cover that percent
+   of @racket[client-w].
+
+  @examples[#:eval (make-eval)
+    (w%->pixels 1/10)
+    (w%->pixels 5/10)
+    (= client-w (w%->pixels 1))]
+}
+
+@defproc[(h%->pixels [w real%]) nonnegative-real?]{
+  Converts a percent to the number of pixels required to cover that percent
+   of @racket[client-h].
+}
+
+@defproc[(text/color [str string?] [c pict-color/c]) pict?]{
+  Draws colored text.
+
+  @examples[#:eval (make-eval)
+    (text/color "red" "red")
+    (parameterize ((current-font-size 20))
+      (text/color "orchid" "orchid"))]
+}
+
+@deftogether[(
+  @defproc[(at-underline [pp (or/c tag-path? pict-path?)] [#:abs-x abs-x real?] [#:abs-y abs-y real?]) refpoint-placer?]
+  @defproc[(at-leftline [pp (or/c tag-path? pict-path?)] [#:abs-x abs-x real?] [#:abs-y abs-y real?]) refpoint-placer?]
+)]{
+  Returns a placer that places picts to a reference point relative to an existing
+  pict within the base.
+  For @racket[at-underline] the reference point is the bottom-left.
+  For @racket[at-leftline] the reference point is the top-left.
+  If given, @racket[abs-x] and @racket[abs-y] shift the reference point.
+  See also @racket[at-find-pict].
+}
+
+@defproc[(make-underline [pp (or/c pict? real?)] [#:height height real?] [#:color color pict-color/c] [#:width width #f (or/c #f real?)]) pict?]{
+  Draw a horizontal line wide enough to underline the given pict.
+
+  @examples[#:eval (make-eval)
+    (let ((word (text "Word")))
+      (ppict-do
+        (file-icon 50 40 "bisque")
+        #:go (coord 1/2 1/2 'cc)
+        word
+        #:go (at-underline word)
+        (make-underline word)))]
+}
+
+@defproc[(make-leftline [pp (or/c pict? real?)] [#:height height real?] [#:color color pict-color/c] [#:width width #f (or/c #f real?)]) pict?]{
+  Draw a vertical line that is equally high as the given pict.
+
+  @examples[#:eval (make-eval)
+    (let ((word (text "Word")))
+      (ppict-do
+        (file-icon 100 80 "bisque")
+        #:go (coord 1/2 1/2 'cc)
+        word
+        #:go (at-leftline word)
+        (make-leftline word #:width 10)))]
+}
+
+@defproc[(make-highlight* [pp pict?] [tag symbol?] [#:color color pict-color/c]) pict?]{
+  Add a background of the given color to all picts tagged (in the sense of
+  @racket[tag-pict?]) with @racket[tag] in the scene @racket[pp].
+
+  @examples[#:eval (make-eval)
+    (ppict-do
+      (blank 80 40)
+      #:set (for/fold ((acc ppict-do-state))
+                      ((i (in-range 8)))
+              (ppict-do
+                acc
+                #:go (coord (/ (* i 10)  80) 9/10)
+                (if (even? i)
+                  (tag-pict (text "X") 'X)
+                  (tag-pict (text "O") 'O))))
+      #:set (make-highlight* ppict-do-state 'X))]
+}
+
+@defthing[#:kind "value" highlight-pen-color pict-color/c]{
+  Default color for underlines, etc.
+}
+
+@defthing[#:kind "value" highlight-brush-color pict-color/c]{
+  Default color for highlights.
+}
 
 @section{raco pict}
 
