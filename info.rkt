@@ -1,7 +1,7 @@
 #lang info
 (define collection "pict-abbrevs")
-(define deps '("base" "pict-lib" "lang-file" "draw-lib"))
-(define build-deps '("rackunit-lib" "racket-doc" "scribble-doc" "pict-doc" "draw-doc" "plot-doc" "plot-lib" "scribble-lib"))
+(define deps '("base" "pict-lib" "lang-file" "draw-lib" "slideshow-lib" "ppict"))
+(define build-deps '("rackunit-lib" "racket-doc" "scribble-doc" "pict-doc" "draw-doc" "plot-doc" "plot-lib" "scribble-lib" "slideshow-doc"))
 (define pkg-desc "Pict command-line stuff")
 (define version "0.2")
 (define pkg-authors '(ben))
