@@ -155,6 +155,25 @@
     (add-rounded-border (standard-fish 100 50) #:x-margin 20 #:y-margin 30)]
 }
 
+@defproc[(add-spotlight-background [pp pict?]
+                                   [#:blur blur (or/c #f real?) 15]
+                                   [#:border-color border-color pict-color/c "plum"]
+                                   [#:color color pict-color/c border-color]
+                                   [#:border-width border-width real? 10]
+                                   [#:x-margin x-margin real? 40]
+                                   [#:y-margin y-margin real? 40]) pict?]{
+  Superimposes the given pict on a blurred ellipse.
+
+  @examples[#:eval (make-eval)
+    (add-spotlight-background (jack-o-lantern 80))
+    (add-spotlight-background (jack-o-lantern 80)
+                              #:border-color "firebrick"
+                              #:color (color%-update-alpha (string->color% "white") 0)
+                              #:border-width 15
+                              #:x-margin 30
+                              #:y-margin 5)]
+}
+
 
 @section{Slideshow Abbrevs}
 

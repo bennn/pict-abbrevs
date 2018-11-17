@@ -45,6 +45,13 @@
                     #:draw-border? boolean?
                     #:x-margin real?
                     #:y-margin real?] pict?)]
+    [add-spotlight-background
+      (->* [pict?] [#:blur (or/c #f real?)
+                    #:color pict-color/c
+                    #:border-color pict-color/c
+                    #:border-width real?
+                    #:x-margin real?
+                    #:y-margin real?] pict?)]
     [add-rounded-border
       (->* [pict?] [#:radius real?
                     #:background-color pict-color/c
@@ -57,6 +64,7 @@
   (only-in racket/class send is-a? is-a?/c make-object)
   (only-in racket/draw color% make-color the-color-database)
   (only-in racket/math pi)
+  (only-in pict/shadow blur)
   pict)
 
 ;; =============================================================================
@@ -181,6 +189,29 @@
                               #:y-margin y-margin
                               #:radius radius))
   (cc-superimpose pp/bg frame))
+
+(define (add-spotlight-background pp
+                                  #:blur [blur-val 15]
+                                  #:color [pre-color #f]
+                                  #:border-color [pre-border-color #f]
+                                  #:border-width [border-width 10]
+                                  #:x-margin [x-margin 40]
+                                  #:y-margin [y-margin 40])
+  (define border-color (or pre-border-color (string->color% "plum")))
+  (define color (or pre-color border-color))
+  (define e-body
+      (filled-ellipse (+ x-margin (pict-width pp))
+                      (+ y-margin (pict-height pp))
+                      #:color color
+                      #:draw-border? #false))
+  (define e-border
+      (ellipse (+ x-margin (pict-width pp))
+               (+ y-margin (pict-height pp))
+               #:border-color border-color
+               #:border-width border-width))
+  (define e-bb
+    (blur e-border blur-val blur-val))
+  (cc-superimpose e-bb e-body pp))
 
 ;; =============================================================================
 
