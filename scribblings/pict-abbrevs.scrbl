@@ -27,13 +27,28 @@
 @defthing[#:kind "value" revolution real?]{
   Equal to @racket[(* 2 pi)], or @hyperlink["https://tauday.com/tau-manifesto"]{the tau constant}.
   Useful for rotating picts.
-  @margin-note{If @litchar{revolution} is too many characters, then @racket[(require (rename-in pict-abbrevs [revolution turn]))].}
+  @margin-note{If the name @litchar{revolution} is too long, then do @racket[(require (rename-in pict-abbrevs [revolution turn]))].}
 
   @examples[#:eval (make-eval)
     (arrowhead 30 (*   0 revolution))
     (arrowhead 30 (* 1/4 revolution))
     (arrowhead 30 (* 1/2 revolution))
   ]
+}
+
+@defthing[#:kind "contract" real% flat-contract?]{
+  Same as @racket[(between/c 0 1)].
+}
+
+@defthing[#:kind "contract" nonnegative-real? flat-contract?]{
+  Same as @racket[(>=/c 0)].
+
+  @examples[#:eval (make-eval)
+    (nonnegative-real? 0)
+    (nonnegative-real? 2.77)
+    (nonnegative-real? 9001)
+    (nonnegative-real? -1)
+    (nonnegative-real? 'X)]
 }
 
 @defthing[#:kind "contract" pict-color/c (-> any/c boolean?)]{
@@ -115,20 +130,31 @@
   Exports the given pict to the file @racket[ps], using @racket[kind] to determine the output format.
 }
 
-@defthing[#:kind "contract" real% flat-contract?]{
-  Same as @racket[(between/c 0 1)].
-}
-
-@defthing[#:kind "contract" nonnegative-real? flat-contract?]{
-  Same as @racket[(>=/c 0)].
+@defproc[(add-rectangle-background [pp pict?]
+                                   [#:radius radius real? 10]
+                                   [#:color color pict-color/c "white"]
+                                   [#:draw-border? draw-border? boolean? #false]
+                                   [#:x-margin x-margin real? 0]
+                                   [#:y-margin y-margin real? 0]) pict?]{
+  Add a rectangle behind a pict.
 
   @examples[#:eval (make-eval)
-    (nonnegative-real? 0)
-    (nonnegative-real? 2.77)
-    (nonnegative-real? 9001)
-    (nonnegative-real? -1)
-    (nonnegative-real? 'X)]
+    (add-rectangle-background (standard-fish 100 50) #:color "bisque")]
 }
+
+@defproc[(add-rounded-border [pp pict?]
+                             [#:radius radius real? 10]
+                             [#:background-color bg-color pict-color/c "white"]
+                             [#:frame-width frame-width real? 1]
+                             [#:frame-color frame-color pict-color/c "black"]
+                             [#:x-margin x-margin real? 0]
+                             [#:y-margin y-margin real? 0]) pict?]{
+  Add a bordered rectangle behind a pict.
+
+  @examples[#:eval (make-eval)
+    (add-rounded-border (standard-fish 100 50) #:x-margin 20 #:y-margin 30)]
+}
+
 
 @section{Slideshow Abbrevs}
 

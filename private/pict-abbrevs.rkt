@@ -39,7 +39,19 @@
       (-> string? (is-a?/c color%))]
     [save-pict
      (->* [path-string? pict?] [(or/c 'png 'jpeg 'xbm 'xpm 'bmp)] boolean?)]
-    ))
+    [add-rectangle-background
+      (->* [pict?] [#:radius real?
+                    #:color pict-color/c
+                    #:draw-border? boolean?
+                    #:x-margin real?
+                    #:y-margin real?] pict?)]
+    [add-rounded-border
+      (->* [pict?] [#:radius real?
+                    #:background-color pict-color/c
+                    #:frame-width real?
+                    #:frame-color pict-color/c
+                    #:x-margin real?
+                    #:y-margin real?] pict?)]))
 
 (require
   (only-in racket/class send is-a? is-a?/c make-object)
@@ -126,6 +138,49 @@
        (string->color% "white"))]
     [else
       (raise-argument-error 'pict-color->color% "pict-color/c" pc)]))
+
+(define (add-rectangle-background p
+                                  #:radius [radius 10]
+                                  #:color [pre-color #false]
+                                  #:draw-border? [draw-border? #false]
+                                  #:x-margin [x-margin 0]
+                                  #:y-margin [y-margin 0])
+  (define-values [w h] (values (pict-width p) (pict-height p)))
+  (define color (or pre-color "white"))
+  (define bg
+    (filled-rounded-rectangle (+ w x-margin)
+                              (+ h y-margin)
+                              radius
+                              #:color color
+                              #:draw-border? draw-border?))
+  (cc-superimpose bg p))
+
+(define (add-tax base tax)
+  (+ base (* base tax)))
+
+(define (add-rounded-border pp
+                            #:radius [radius 10]
+                            #:background-color [pre-bg-color #f]
+                            #:x-margin [x-margin 0]
+                            #:y-margin [y-margin 0]
+                            #:frame-width [frame-width 1]
+                            #:frame-color [pre-frame-color #f])
+  (define-values [w h] (values (pict-width pp) (pict-height pp)))
+  (define frame-color (or pre-frame-color "black"))
+  (define frame (rounded-rectangle (+ w x-margin)
+                                   (+ h y-margin)
+                                   radius
+                                   #:border-width frame-width
+                                   #:border-color frame-color))
+  (define bg-color (or pre-bg-color "white"))
+  (define pp/bg
+    (add-rectangle-background pp
+                              #:color bg-color
+                              #:draw-border? #false
+                              #:x-margin x-margin
+                              #:y-margin y-margin
+                              #:radius radius))
+  (cc-superimpose pp/bg frame))
 
 ;; =============================================================================
 
